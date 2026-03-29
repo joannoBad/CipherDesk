@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cipher Desk</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero">
+      <p class="eyebrow">Local Encryption App</p>
+      <h1>Cipher Desk</h1>
+      <p class="hero-copy">
+        Шифруйте и расшифровывайте текст локально в браузере. Ничего не отправляется на сервер.
+      </p>
+      <div class="hero-badges">
+        <span>AES-GCM</span>
+        <span>PBKDF2</span>
+        <span>Web Crypto</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="tabs" role="tablist" aria-label="Encryption mode">
+        <button class="tab is-active" type="button" data-mode="encrypt">Шифрование</button>
+        <button class="tab" type="button" data-mode="decrypt">Расшифровка</button>
+      </div>
+
+      <form id="crypto-form" class="form">
+        <label class="field">
+          <span>Пароль</span>
+          <input id="password" type="password" minlength="8" placeholder="Минимум 8 символов" required>
+        </label>
+
+        <label class="field">
+          <span id="input-label">Исходный текст</span>
+          <textarea id="input-text" rows="10" placeholder="Введите текст для шифрования" required></textarea>
+        </label>
+
+        <div class="actions">
+          <button class="primary" type="submit" id="submit-button">Зашифровать</button>
+          <button class="ghost" type="button" id="copy-button">Скопировать результат</button>
+          <button class="ghost" type="button" id="clear-button">Очистить</button>
+        </div>
+      </form>
+
+      <section class="output">
+        <div class="output-header">
+          <h2>Результат</h2>
+          <p id="status-text">Готово к работе</p>
+        </div>
+        <textarea id="output-text" rows="10" readonly placeholder="Здесь появится результат"></textarea>
+      </section>
+    </section>
+  </main>
+
+  <script src="./script.js"></script>
+</body>
+</html>

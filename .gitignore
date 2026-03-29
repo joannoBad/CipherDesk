@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+
+# Build outputs
+dist/
+release/
+
+# OS / editor
+Thumbs.db
+desktop.ini
