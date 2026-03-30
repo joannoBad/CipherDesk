@@ -334,7 +334,7 @@ try {
     $config = Import-ScenarioConfig -Path $resolvedConfigPath
     $assetsRoot = Join-Path $rootDir $config.assetsRoot
     $outputRoot = Join-Path $rootDir $config.outputRoot
-    $appScriptPath = Join-Path $rootDir "CipherDesk.ps1"
+    $appScriptPath = Join-Path $rootDir "CipherDesk.App.ps1"
 
     if (-not (Test-Path -LiteralPath $outputRoot)) {
         New-Item -ItemType Directory -Path $outputRoot | Out-Null

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2
+
+- Moved screenshot automation out of the public entrypoint into a separate internal app layer.
+- Simplified `CipherDesk.ps1` so it behaves like a user-facing launcher and self-test wrapper.
+- Updated portable packaging to include the split runtime files explicitly.
+- Refreshed documentation around dev tooling and screenshot generation.
+
 ## 0.2.1
 
 - Fixed demo screenshot text encoding so Russian sample text renders correctly.

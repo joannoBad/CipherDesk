@@ -102,6 +102,7 @@ try {
     New-Item -ItemType Directory -Path $portableDir | Out-Null
 
     Copy-Item -LiteralPath (Join-Path $rootDir "CipherDesk.ps1") -Destination (Join-Path $portableDir "CipherDesk.ps1")
+    Copy-Item -LiteralPath (Join-Path $rootDir "CipherDesk.App.ps1") -Destination (Join-Path $portableDir "CipherDesk.App.ps1")
     Copy-Item -LiteralPath (Join-Path $rootDir "CipherDeskLauncher.exe") -Destination (Join-Path $portableDir "CipherDeskLauncher.exe")
     Copy-Item -LiteralPath (Join-Path $rootDir "Launch-CipherDesk.cmd") -Destination (Join-Path $portableDir "Launch-CipherDesk.cmd")
 
@@ -115,7 +116,7 @@ Start the app with:
 Notes:
 - Works offline
 - Does not need installation
-- Keep CipherDesk.ps1 next to the launcher files
+- Keep CipherDesk.ps1 and CipherDesk.App.ps1 next to the launcher files
 "@ | Set-Content -LiteralPath (Join-Path $portableDir "README-PORTABLE.txt")
 
     Write-Success "Portable package created successfully:"
