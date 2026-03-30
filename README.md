@@ -94,7 +94,7 @@ Self-test OK
 - [CHANGELOG.md](CHANGELOG.md) — история изменений
 - [docs/file-format.md](docs/file-format.md) — описание формата `.cdesk`
 - [docs/architecture.md](docs/architecture.md) — устройство приложения
-- [RELEASE_NOTES_0.2.3.md](RELEASE_NOTES_0.2.3.md) — заметки к версии `0.2.3`
+- [docs/releases/0.2.3.md](docs/releases/0.2.3.md) — заметки к версии `0.2.3`
 - [demo-assets/README.md](demo-assets/README.md) — demo-файлы для автоматического обновления скриншотов
 
 ## Обновление Скриншотов
