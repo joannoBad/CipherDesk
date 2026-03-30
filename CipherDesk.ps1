@@ -313,7 +313,9 @@ function Get-DecryptedFilePath {
 
 function Get-InputFilePath {
     param(
-        [bool]$EncryptedInput = $false
+        [bool]$EncryptedInput = $false,
+
+        [string]$ContentMode = "image"
     )
 
     $dialog = New-Object Microsoft.Win32.OpenFileDialog
@@ -324,7 +326,12 @@ function Get-InputFilePath {
         $dialog.Filter = "Cipher Desk files (*.cdesk)|*.cdesk|JSON files (*.json)|*.json|All files (*.*)|*.*"
     }
     else {
-        $dialog.Filter = "Image files|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp;*.tif;*.tiff;*.ico|All files (*.*)|*.*"
+        if ($ContentMode -eq "document") {
+            $dialog.Filter = "Documents|*.pdf;*.doc;*.docx;*.xls;*.xlsx;*.ppt;*.pptx;*.txt;*.rtf;*.odt;*.ods;*.csv|All files (*.*)|*.*"
+        }
+        else {
+            $dialog.Filter = "Image files|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp;*.tif;*.tiff;*.ico|All files (*.*)|*.*"
+        }
     }
 
     if ($dialog.ShowDialog() -eq $true) {
@@ -391,6 +398,18 @@ if ($SelfTest) {
         throw "Binary self-test failed."
     }
 
+    $documentSample = [System.Text.Encoding]::UTF8.GetBytes("Document payload self-test")
+    $documentPayload = Protect-Bytes -PlainBytes $documentSample -Password $password -PayloadType "document" -OriginalName "sample.pdf" -OriginalExtension ".pdf"
+    $documentRoundTrip = Unprotect-Bytes -SerializedPayload $documentPayload -Password $password
+
+    if ($documentRoundTrip.OriginalExtension -ne ".pdf") {
+        throw "Document metadata self-test failed."
+    }
+
+    if (-not (Test-ByteArrayEquality -Left $documentSample -Right $documentRoundTrip.PlainBytes)) {
+        throw "Document self-test failed."
+    }
+
     Write-Output "Self-test OK"
     exit 0
 }
@@ -401,13 +420,65 @@ Add-Type -AssemblyName PresentationCore, PresentationFramework, WindowsBase
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Cipher Desk"
-        Height="900"
+        Height="790"
         Width="980"
-        MinHeight="780"
+        MinHeight="660"
         MinWidth="860"
         WindowStartupLocation="CenterScreen"
-        Background="#F6EFE4"
+        Background="#070910"
         FontFamily="Segoe UI">
+    <Window.Resources>
+        <DropShadowEffect x:Key="SoftGlow"
+                          Color="#7039B8FF"
+                          BlurRadius="20"
+                          ShadowDepth="0"
+                          Opacity="0.6" />
+
+        <Style x:Key="RoundButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="#EAF1FF" />
+            <Setter Property="Background" Value="#151A28" />
+            <Setter Property="BorderBrush" Value="#313A57" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="16,10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="16"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Effect" Value="{StaticResource SoftGlow}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.92" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.55" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FieldBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="#0D1220" />
+            <Setter Property="Foreground" Value="#EFF3FF" />
+            <Setter Property="BorderBrush" Value="#2B3652" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="14,12" />
+        </Style>
+    </Window.Resources>
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -416,32 +487,37 @@ Add-Type -AssemblyName PresentationCore, PresentationFramework, WindowsBase
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
-                Background="#FFF8F1"
+                Background="#0F1320"
+                BorderBrush="#202944"
+                BorderThickness="1"
                 CornerRadius="24"
                 Padding="24"
-                Margin="0,0,0,18">
+                Margin="0,0,0,16">
             <StackPanel>
                 <TextBlock Text="Cipher Desk"
-                           FontSize="34"
+                           FontSize="36"
                            FontWeight="Bold"
-                           Foreground="#1E2430" />
-                <TextBlock Text="Offline desktop app for encrypting text and image files. No internet and no external dependencies."
+                           Foreground="#F2F5FF" />
+                <TextBlock Text="Dark offline vault for encrypting text and image files. No internet. No external services. Only local secrets."
                            Margin="0,10,0,0"
                            TextWrapping="Wrap"
                            FontSize="15"
-                           Foreground="#596273" />
+                           Foreground="#94A0BC" />
                 <WrapPanel Margin="0,16,0,0">
-                    <Border Background="#F0E3D6" CornerRadius="999" Padding="10,5" Margin="0,0,10,10">
-                        <TextBlock Text="AES-256-CBC" Foreground="#8C3416" FontWeight="SemiBold" />
+                    <Border Background="#151C30" CornerRadius="999" Padding="10,5" Margin="0,0,10,10">
+                        <TextBlock Text="AES-256-CBC" Foreground="#8AB4FF" FontWeight="SemiBold" />
                     </Border>
-                    <Border Background="#E3F0E8" CornerRadius="999" Padding="10,5" Margin="0,0,10,10">
-                        <TextBlock Text="HMAC-SHA256" Foreground="#2E7D57" FontWeight="SemiBold" />
+                    <Border Background="#141B2B" CornerRadius="999" Padding="10,5" Margin="0,0,10,10">
+                        <TextBlock Text="HMAC-SHA256" Foreground="#7FD8FF" FontWeight="SemiBold" />
                     </Border>
-                    <Border Background="#E7EDF5" CornerRadius="999" Padding="10,5" Margin="0,0,10,10">
-                        <TextBlock Text="PBKDF2-SHA256" Foreground="#335C85" FontWeight="SemiBold" />
+                    <Border Background="#18192F" CornerRadius="999" Padding="10,5" Margin="0,0,10,10">
+                        <TextBlock Text="PBKDF2-SHA256" Foreground="#A4A9FF" FontWeight="SemiBold" />
                     </Border>
-                    <Border Background="#F2ECE4" CornerRadius="999" Padding="10,5" Margin="0,0,10,10">
-                        <TextBlock Text="Image files" Foreground="#1E2430" FontWeight="SemiBold" />
+                    <Border Background="#241633" CornerRadius="999" Padding="10,5" Margin="0,0,10,10">
+                        <TextBlock Text="Image files" Foreground="#D798FF" FontWeight="SemiBold" />
+                    </Border>
+                    <Border Background="#171A30" CornerRadius="999" Padding="10,5" Margin="0,0,10,10">
+                        <TextBlock Text="Documents" Foreground="#9CC4FF" FontWeight="SemiBold" />
                     </Border>
                 </WrapPanel>
             </StackPanel>
@@ -454,9 +530,11 @@ Add-Type -AssemblyName PresentationCore, PresentationFramework, WindowsBase
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="#FFFCF7" CornerRadius="24" Padding="22">
+            <Border Grid.Column="0" Background="#0F1320" BorderBrush="#202944" BorderThickness="1" CornerRadius="24" Padding="20">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -467,87 +545,203 @@ Add-Type -AssemblyName PresentationCore, PresentationFramework, WindowsBase
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="Mode" FontWeight="SemiBold" Foreground="#1E2430" />
-                    <ComboBox Grid.Row="1" Name="ModeComboBox" SelectedIndex="0" Margin="0,8,0,18" Height="34">
-                        <ComboBoxItem Content="Encrypt text" />
-                        <ComboBoxItem Content="Decrypt text" />
-                        <ComboBoxItem Content="Encrypt image" />
-                        <ComboBoxItem Content="Decrypt image" />
-                    </ComboBox>
+                    <TextBlock Grid.Row="0" Text="Vault Type" FontWeight="SemiBold" Foreground="#D9E1F2" />
+                    <Grid Grid.Row="1" Margin="0,8,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Row="2" Text="Password" FontWeight="SemiBold" Foreground="#1E2430" />
-                    <PasswordBox Grid.Row="3" Name="PasswordBox" Margin="0,8,0,18" Height="34" />
+                        <Button Grid.Column="0"
+                                Name="TextModeButton"
+                                Content="TEXT"
+                                Style="{StaticResource RoundButtonStyle}"
+                                Background="#151B2A"
+                                BorderBrush="#38435E"
+                                FontWeight="Bold"
+                                Padding="16,16" />
 
-                    <TextBlock Grid.Row="4" Name="InputLabel" Text="Source text" FontWeight="SemiBold" Foreground="#1E2430" />
-                    <TextBox Grid.Row="5"
+                        <Button Grid.Column="2"
+                                Name="ImageModeButton"
+                                Content="IMAGE"
+                                Style="{StaticResource RoundButtonStyle}"
+                                Background="#151B2A"
+                                BorderBrush="#38435E"
+                                FontWeight="Bold"
+                                Padding="16,16" />
+
+                        <Button Grid.Column="4"
+                                Name="DocumentModeButton"
+                                Content="DOCUMENT"
+                                Style="{StaticResource RoundButtonStyle}"
+                                Background="#151B2A"
+                                BorderBrush="#38435E"
+                                FontWeight="Bold"
+                                Padding="16,16" />
+                    </Grid>
+
+                    <TextBlock Grid.Row="2" Text="Action" FontWeight="SemiBold" Foreground="#D9E1F2" />
+                    <Border Grid.Row="3"
+                            Margin="0,8,0,14"
+                            Background="#0B0F1A"
+                            BorderBrush="#222B45"
+                            BorderThickness="1"
+                            CornerRadius="18"
+                            Padding="4">
+                        <UniformGrid Columns="2">
+                            <Button Name="EncryptActionButton"
+                                    Content="Encrypt"
+                                    Style="{StaticResource RoundButtonStyle}"
+                                    Background="#151B2A"
+                                    BorderBrush="#151B2A"
+                                    FontWeight="Bold"
+                                    Padding="14,10"
+                                    Margin="0,0,4,0" />
+                            <Button Name="DecryptActionButton"
+                                    Content="Decrypt"
+                                    Style="{StaticResource RoundButtonStyle}"
+                                    Background="#151B2A"
+                                    BorderBrush="#151B2A"
+                                    FontWeight="Bold"
+                                    Padding="14,10"
+                                    Margin="4,0,0,0" />
+                        </UniformGrid>
+                    </Border>
+
+                    <TextBlock Grid.Row="4" Text="Password" FontWeight="SemiBold" Foreground="#D9E1F2" />
+                    <PasswordBox Grid.Row="5" Name="PasswordBox" Margin="0,8,0,14" Height="36" Background="#0D1220" Foreground="#F2F5FF" BorderBrush="#2B3652" />
+
+                    <TextBlock Grid.Row="6" Name="InputLabel" Text="Source text" FontWeight="SemiBold" Foreground="#D9E1F2" />
+                    <TextBox Grid.Row="7"
                              Name="InputTextBox"
-                             Margin="0,8,0,18"
+                             Margin="0,8,0,14"
                              AcceptsReturn="True"
                              VerticalScrollBarVisibility="Auto"
-                             TextWrapping="Wrap" />
+                             TextWrapping="Wrap"
+                             Style="{StaticResource FieldBoxStyle}"
+                             CaretBrush="#F2F5FF" />
 
-                    <WrapPanel Grid.Row="6" Name="InputButtonsPanel" Margin="0,0,0,8" Visibility="Collapsed">
+                    <WrapPanel Grid.Row="8" Name="InputButtonsPanel" Margin="0,0,0,6" Visibility="Collapsed">
                         <Button Name="BrowseInputButton"
                                 Content="Browse input"
-                                Background="#F2ECE4"
-                                Foreground="#1E2430"
-                                Padding="18,10"
+                                Style="{StaticResource RoundButtonStyle}"
+                                Background="#151B2A"
+                                BorderBrush="#38435E"
+                                Padding="16,10"
                                 Margin="0,0,10,10" />
                     </WrapPanel>
 
-                    <WrapPanel Grid.Row="7">
+                    <WrapPanel Grid.Row="9">
                         <Button Name="RunButton"
                                 Content="Encrypt"
-                                Background="#C45C2D"
-                                Foreground="White"
+                                Style="{StaticResource RoundButtonStyle}"
+                                Background="#3A1F68"
+                                BorderBrush="#7B5DFF"
+                                Foreground="#F7F2FF"
                                 FontWeight="Bold"
-                                Padding="18,10"
+                                Padding="16,10"
                                 Margin="0,0,10,10" />
                         <Button Name="ClearButton"
                                 Content="Clear"
-                                Background="#F2ECE4"
-                                Foreground="#1E2430"
-                                Padding="18,10"
+                                Style="{StaticResource RoundButtonStyle}"
+                                Background="#151B2A"
+                                BorderBrush="#38435E"
+                                Padding="16,10"
                                 Margin="0,0,10,10" />
                     </WrapPanel>
                 </Grid>
             </Border>
 
-            <Border Grid.Column="2" Background="#FFFCF7" CornerRadius="24" Padding="22">
+            <Border Grid.Column="2" Background="#0F1320" BorderBrush="#202944" BorderThickness="1" CornerRadius="24" Padding="20">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="Result" FontWeight="SemiBold" Foreground="#1E2430" />
+                    <TextBlock Grid.Row="0" Text="Result" FontWeight="SemiBold" Foreground="#D9E1F2" />
                     <TextBlock Grid.Row="1"
                                Name="StatusText"
-                               Margin="0,8,0,18"
+                               Margin="0,8,0,8"
                                Text="Ready"
-                               Foreground="#2E7D57"
+                               Foreground="#63D39A"
                                FontWeight="SemiBold" />
-                    <TextBox Grid.Row="2"
+
+                    <TextBlock Grid.Row="2"
+                               Name="SelectedFileInfoText"
+                               Margin="0,0,0,14"
+                               Text=""
+                               Foreground="#8EA0C8"
+                               TextWrapping="Wrap"
+                               Visibility="Collapsed" />
+
+                    <Border Grid.Row="3"
+                            Name="PreviewBorder"
+                            Height="180"
+                            Margin="0,0,0,14"
+                            Background="#0B0F1A"
+                            BorderBrush="#222B45"
+                            BorderThickness="1"
+                            CornerRadius="18">
+                        <Grid Margin="12">
+                            <Image Name="PreviewImage"
+                                   Stretch="Uniform"
+                                   Visibility="Collapsed" />
+                            <TextBlock Name="PreviewPlaceholder"
+                                       Text="Image preview will appear here"
+                                       Foreground="#7783A0"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap" />
+                            </Grid>
+                    </Border>
+
+                    <TextBox Grid.Row="4"
                              Name="OutputTextBox"
                              AcceptsReturn="True"
                              VerticalScrollBarVisibility="Auto"
                              TextWrapping="Wrap"
-                             IsReadOnly="True" />
-                    <WrapPanel Grid.Row="3" Margin="0,18,0,0">
+                             IsReadOnly="True"
+                             Style="{StaticResource FieldBoxStyle}" />
+                    <WrapPanel Grid.Row="5" Margin="0,14,0,0">
                         <Button Name="SaveOutputButton"
                                 Content="Save result as"
-                                Background="#F2ECE4"
-                                Foreground="#1E2430"
-                                Padding="18,10"
+                                Style="{StaticResource RoundButtonStyle}"
+                                Background="#151B2A"
+                                BorderBrush="#38435E"
+                                Padding="16,10"
+                                Margin="0,0,10,10"
+                                Visibility="Collapsed" />
+                        <Button Name="OpenFileButton"
+                                Content="Open file"
+                                Style="{StaticResource RoundButtonStyle}"
+                                Background="#14264A"
+                                BorderBrush="#6CA9FF"
+                                Padding="16,10"
+                                Margin="0,0,10,10"
+                                Visibility="Collapsed" />
+                        <Button Name="ShowInFolderButton"
+                                Content="Show in folder"
+                                Style="{StaticResource RoundButtonStyle}"
+                                Background="#1B2140"
+                                BorderBrush="#8AA7FF"
+                                Padding="16,10"
                                 Margin="0,0,10,10"
                                 Visibility="Collapsed" />
                         <Button Name="CopyButton"
                                 Content="Copy result"
-                                Background="#F2ECE4"
-                                Foreground="#1E2430"
-                                Padding="18,10"
+                                Style="{StaticResource RoundButtonStyle}"
+                                Background="#151B2A"
+                                BorderBrush="#38435E"
+                                Padding="16,10"
                                 Margin="0,0,10,10" />
                     </WrapPanel>
                 </Grid>
@@ -556,8 +750,8 @@ Add-Type -AssemblyName PresentationCore, PresentationFramework, WindowsBase
 
         <TextBlock Grid.Row="2"
                    Margin="4,18,4,0"
-                   Text="Text mode returns JSON. Image mode writes an encrypted .cdesk file and restores the image on decrypt."
-                   Foreground="#596273"
+                   Text="Text mode returns JSON. Image and document modes write encrypted .cdesk files and restore the original extension on decrypt."
+                   Foreground="#7F8AA6"
                    TextWrapping="Wrap" />
     </Grid>
 </Window>
@@ -566,18 +760,32 @@ Add-Type -AssemblyName PresentationCore, PresentationFramework, WindowsBase
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 $window = [Windows.Markup.XamlReader]::Load($reader)
 
-$modeComboBox = $window.FindName("ModeComboBox")
+$textModeButton = $window.FindName("TextModeButton")
+$imageModeButton = $window.FindName("ImageModeButton")
+$documentModeButton = $window.FindName("DocumentModeButton")
+$encryptActionButton = $window.FindName("EncryptActionButton")
+$decryptActionButton = $window.FindName("DecryptActionButton")
 $passwordBox = $window.FindName("PasswordBox")
 $inputLabel = $window.FindName("InputLabel")
 $inputTextBox = $window.FindName("InputTextBox")
 $outputTextBox = $window.FindName("OutputTextBox")
 $statusText = $window.FindName("StatusText")
+$selectedFileInfoText = $window.FindName("SelectedFileInfoText")
+$previewImage = $window.FindName("PreviewImage")
+$previewPlaceholder = $window.FindName("PreviewPlaceholder")
+$previewBorder = $window.FindName("PreviewBorder")
 $browseInputButton = $window.FindName("BrowseInputButton")
 $saveOutputButton = $window.FindName("SaveOutputButton")
+$openFileButton = $window.FindName("OpenFileButton")
+$showInFolderButton = $window.FindName("ShowInFolderButton")
 $inputButtonsPanel = $window.FindName("InputButtonsPanel")
 $runButton = $window.FindName("RunButton")
 $copyButton = $window.FindName("CopyButton")
 $clearButton = $window.FindName("ClearButton")
+
+$script:SelectedContentMode = "text"
+$script:SelectedOperation = "encrypt"
+$script:LastOpenedFilePath = $null
 
 function Set-Status {
     param(
@@ -588,13 +796,172 @@ function Set-Status {
     )
 
     $statusText.Text = $Message
-    $statusText.Foreground = if ($IsError) { "#B42318" } else { "#2E7D57" }
+    $statusText.Foreground = if ($IsError) { "#FF6B6B" } else { "#63D39A" }
+}
+
+function Get-CurrentModeIndex {
+    if ($script:SelectedContentMode -eq "text" -and $script:SelectedOperation -eq "encrypt") { return 0 }
+    if ($script:SelectedContentMode -eq "text" -and $script:SelectedOperation -eq "decrypt") { return 1 }
+    if ($script:SelectedContentMode -eq "image" -and $script:SelectedOperation -eq "encrypt") { return 2 }
+    if ($script:SelectedContentMode -eq "image" -and $script:SelectedOperation -eq "decrypt") { return 3 }
+    if ($script:SelectedContentMode -eq "document" -and $script:SelectedOperation -eq "encrypt") { return 4 }
+    return 5
+}
+
+function Set-ToggleStyle {
+    param(
+        [Parameter(Mandatory = $true)]
+        $Button,
+
+        [Parameter(Mandatory = $true)]
+        [bool]$IsActive,
+
+        [string]$ActiveBackground = "#37205D",
+
+        [string]$ActiveBorder = "#8D73FF"
+    )
+
+    if ($IsActive) {
+        $Button.Background = $ActiveBackground
+        $Button.BorderBrush = $ActiveBorder
+        $Button.Foreground = "#F8F4FF"
+    }
+    else {
+        $Button.Background = "#151B2A"
+        $Button.BorderBrush = "#38435E"
+        $Button.Foreground = "#D9E1F2"
+    }
+}
+
+function Format-FileSize {
+    param(
+        [Parameter(Mandatory = $true)]
+        [long]$Bytes
+    )
+
+    if ($Bytes -ge 1GB) {
+        return ("{0:N2} GB" -f ($Bytes / 1GB))
+    }
+
+    if ($Bytes -ge 1MB) {
+        return ("{0:N2} MB" -f ($Bytes / 1MB))
+    }
+
+    if ($Bytes -ge 1KB) {
+        return ("{0:N2} KB" -f ($Bytes / 1KB))
+    }
+
+    return "$Bytes bytes"
+}
+
+function Set-SelectedFileInfo {
+    param(
+        [string]$Path
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path -LiteralPath $Path)) {
+        $selectedFileInfoText.Text = ""
+        $selectedFileInfoText.Visibility = "Collapsed"
+        return
+    }
+
+    $item = Get-Item -LiteralPath $Path
+    $extension = [System.IO.Path]::GetExtension($item.Name).ToLowerInvariant()
+    $typeLabel = switch ($extension) {
+        ".pdf" { "PDF" }
+        ".doc" { "DOC" }
+        ".docx" { "DOCX" }
+        ".xls" { "XLS" }
+        ".xlsx" { "XLSX" }
+        ".ppt" { "PPT" }
+        ".pptx" { "PPTX" }
+        ".txt" { "TEXT" }
+        ".rtf" { "RTF" }
+        ".csv" { "CSV" }
+        ".odt" { "ODT" }
+        ".ods" { "ODS" }
+        ".png" { "PNG" }
+        ".jpg" { "JPG" }
+        ".jpeg" { "JPEG" }
+        ".gif" { "GIF" }
+        ".bmp" { "BMP" }
+        ".webp" { "WEBP" }
+        ".tif" { "TIFF" }
+        ".tiff" { "TIFF" }
+        ".ico" { "ICO" }
+        default {
+            if ([string]::IsNullOrWhiteSpace($extension)) { "FILE" }
+            else { $extension.TrimStart(".").ToUpperInvariant() }
+        }
+    }
+
+    $selectedFileInfoText.Text = "[$typeLabel] $($item.Name)  |  Size: $(Format-FileSize -Bytes $item.Length)"
+    $selectedFileInfoText.Visibility = "Visible"
+}
+
+function Clear-Preview {
+    $previewImage.Source = $null
+    $previewImage.Visibility = "Collapsed"
+    $previewPlaceholder.Visibility = "Visible"
+    $previewPlaceholder.Text = "Preview will appear here when available"
+}
+
+function Set-PreviewFromBytes {
+    param(
+        [Parameter(Mandatory = $true)]
+        [byte[]]$Bytes,
+
+        [string]$PlaceholderOnError = "Preview is unavailable for this file."
+    )
+
+    try {
+        $memoryStream = New-Object System.IO.MemoryStream(, $Bytes)
+        try {
+            $bitmap = New-Object System.Windows.Media.Imaging.BitmapImage
+            $bitmap.BeginInit()
+            $bitmap.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+            $bitmap.StreamSource = $memoryStream
+            $bitmap.EndInit()
+            $bitmap.Freeze()
+        }
+        finally {
+            $memoryStream.Dispose()
+        }
+
+        $previewImage.Source = $bitmap
+        $previewImage.Visibility = "Visible"
+        $previewPlaceholder.Visibility = "Collapsed"
+    }
+    catch {
+        $previewImage.Source = $null
+        $previewImage.Visibility = "Collapsed"
+        $previewPlaceholder.Text = $PlaceholderOnError
+        $previewPlaceholder.Visibility = "Visible"
+    }
+}
+
+function Set-PreviewFromFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [string]$PlaceholderOnError = "Preview is unavailable for this file."
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        Clear-Preview
+        return
+    }
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    Set-PreviewFromBytes -Bytes $bytes -PlaceholderOnError $PlaceholderOnError
 }
 
 function Update-ModeUi {
-    $isFileMode = $modeComboBox.SelectedIndex -ge 2
+    $currentMode = Get-CurrentModeIndex
+    $isFileMode = $script:SelectedContentMode -ne "text"
 
-    switch ($modeComboBox.SelectedIndex) {
+    switch ($currentMode) {
         0 {
             $inputLabel.Text = "Source text"
             $runButton.Content = "Encrypt"
@@ -615,40 +982,113 @@ function Update-ModeUi {
             $runButton.Content = "Decrypt image"
             Set-Status -Message "Image decryption mode"
         }
+        4 {
+            $inputLabel.Text = "Input document path"
+            $runButton.Content = "Encrypt document"
+            Set-Status -Message "Document encryption mode"
+        }
+        5 {
+            $inputLabel.Text = "Encrypted file path"
+            $runButton.Content = "Decrypt document"
+            Set-Status -Message "Document decryption mode"
+        }
     }
+
+    Set-ToggleStyle -Button $textModeButton -IsActive ($script:SelectedContentMode -eq "text") -ActiveBackground "#182C52" -ActiveBorder "#7CB7FF"
+    Set-ToggleStyle -Button $imageModeButton -IsActive ($script:SelectedContentMode -eq "image") -ActiveBackground "#2B1841" -ActiveBorder "#D798FF"
+    Set-ToggleStyle -Button $documentModeButton -IsActive ($script:SelectedContentMode -eq "document") -ActiveBackground "#1B2346" -ActiveBorder "#9CC4FF"
+    Set-ToggleStyle -Button $encryptActionButton -IsActive ($script:SelectedOperation -eq "encrypt") -ActiveBackground "#2C2160" -ActiveBorder "#8D73FF"
+    Set-ToggleStyle -Button $decryptActionButton -IsActive ($script:SelectedOperation -eq "decrypt") -ActiveBackground "#142B52" -ActiveBorder "#79B6FF"
 
     $inputButtonsPanel.Visibility = if ($isFileMode) { "Visible" } else { "Collapsed" }
     $saveOutputButton.Visibility = if ($isFileMode) { "Visible" } else { "Collapsed" }
+    $openFileButton.Visibility = "Collapsed"
+    $showInFolderButton.Visibility = "Collapsed"
     $copyButton.Visibility = if ($isFileMode) { "Collapsed" } else { "Visible" }
     $inputTextBox.IsReadOnly = $isFileMode
     $outputTextBox.IsReadOnly = $true
+    $previewBorder.Visibility = if ($script:SelectedContentMode -eq "text") { "Collapsed" } else { "Visible" }
     $inputTextBox.Text = ""
     $outputTextBox.Text = ""
+    $script:LastOpenedFilePath = $null
+    Set-SelectedFileInfo
+    Clear-Preview
+
+    if ($script:SelectedContentMode -eq "document") {
+        $previewPlaceholder.Text = "Document vault does not render file previews. Encrypted files keep the original extension metadata."
+    }
 }
 
-$modeComboBox.Add_SelectionChanged({
+$textModeButton.Add_Click({
+    $script:SelectedContentMode = "text"
+    Update-ModeUi
+})
+
+$imageModeButton.Add_Click({
+    $script:SelectedContentMode = "image"
+    Update-ModeUi
+})
+
+$documentModeButton.Add_Click({
+    $script:SelectedContentMode = "document"
+    Update-ModeUi
+})
+
+$encryptActionButton.Add_Click({
+    $script:SelectedOperation = "encrypt"
+    Update-ModeUi
+})
+
+$decryptActionButton.Add_Click({
+    $script:SelectedOperation = "decrypt"
     Update-ModeUi
 })
 
 $browseInputButton.Add_Click({
     try {
-        $isEncryptedInput = $modeComboBox.SelectedIndex -eq 3
-        $selectedPath = Get-InputFilePath -EncryptedInput $isEncryptedInput
+        $currentMode = Get-CurrentModeIndex
+        $isEncryptedInput = $currentMode -in @(3, 5)
+        $selectedPath = Get-InputFilePath -EncryptedInput $isEncryptedInput -ContentMode $script:SelectedContentMode
 
         if ([string]::IsNullOrWhiteSpace($selectedPath)) {
             return
         }
 
         $inputTextBox.Text = $selectedPath
+        if ($script:SelectedContentMode -eq "document") {
+            Set-SelectedFileInfo -Path $selectedPath
+        }
 
-        if ($modeComboBox.SelectedIndex -eq 2) {
+        if ($currentMode -eq 2) {
             $outputTextBox.Text = Get-EncryptedFilePath -InputPath $selectedPath
+            Set-PreviewFromFile -Path $selectedPath -PlaceholderOnError "Preview is unavailable for the selected image."
             Set-Status -Message "Image selected. Adjust output path if needed."
+        }
+        elseif ($currentMode -eq 3) {
+            $payload = Get-PayloadObject -SerializedPayload ([System.IO.File]::ReadAllText($selectedPath))
+            $outputTextBox.Text = Get-DecryptedFilePath -EncryptedPath $selectedPath -OriginalExtension $payload.originalExtension
+            $previewPlaceholder.Text = "Encrypted file selected. Preview will appear after decrypt."
+            $previewPlaceholder.Visibility = "Visible"
+            $previewImage.Visibility = "Collapsed"
+            $previewImage.Source = $null
+            Set-Status -Message "Encrypted file selected. Adjust output path if needed."
+        }
+        elseif ($currentMode -eq 4) {
+            $outputTextBox.Text = Get-EncryptedFilePath -InputPath $selectedPath
+            $previewImage.Source = $null
+            $previewImage.Visibility = "Collapsed"
+            $previewPlaceholder.Text = "Document selected. Adjust output path if needed."
+            $previewPlaceholder.Visibility = "Visible"
+            Set-Status -Message "Document selected. Adjust output path if needed."
         }
         else {
             $payload = Get-PayloadObject -SerializedPayload ([System.IO.File]::ReadAllText($selectedPath))
             $outputTextBox.Text = Get-DecryptedFilePath -EncryptedPath $selectedPath -OriginalExtension $payload.originalExtension
-            Set-Status -Message "Encrypted file selected. Adjust output path if needed."
+            $previewImage.Source = $null
+            $previewImage.Visibility = "Collapsed"
+            $previewPlaceholder.Text = "Encrypted document selected. The restored file will keep its original extension."
+            $previewPlaceholder.Visibility = "Visible"
+            Set-Status -Message "Encrypted document selected. Adjust output path if needed."
         }
     }
     catch {
@@ -662,7 +1102,7 @@ $saveOutputButton.Add_Click({
         return
     }
 
-    $isEncryptedOutput = $modeComboBox.SelectedIndex -eq 2
+    $isEncryptedOutput = (Get-CurrentModeIndex) -in @(2, 4)
     $selectedPath = Get-OutputFilePath -InitialPath $outputTextBox.Text -EncryptedOutput $isEncryptedOutput
 
     if (-not [string]::IsNullOrWhiteSpace($selectedPath)) {
@@ -680,7 +1120,7 @@ $runButton.Add_Click({
     }
 
     try {
-        switch ($modeComboBox.SelectedIndex) {
+        switch (Get-CurrentModeIndex) {
             0 {
                 $outputTextBox.Text = Protect-Text -PlainText $input -Password $password
                 Set-Status -Message "Text encrypted successfully."
@@ -703,6 +1143,7 @@ $runButton.Add_Click({
                 $extension = [System.IO.Path]::GetExtension($input)
                 $payload = Protect-Bytes -PlainBytes $inputBytes -Password $password -PayloadType "image" -OriginalName $fileName -OriginalExtension $extension
                 [System.IO.File]::WriteAllText($outputTextBox.Text, $payload, [System.Text.Encoding]::UTF8)
+                Set-PreviewFromBytes -Bytes $inputBytes -PlaceholderOnError "Preview is unavailable for the selected image."
                 Set-Status -Message "Image encrypted successfully."
             }
             3 {
@@ -717,8 +1158,50 @@ $runButton.Add_Click({
                 $serializedPayload = [System.IO.File]::ReadAllText($input)
                 $result = Unprotect-Bytes -SerializedPayload $serializedPayload -Password $password
                 [System.IO.File]::WriteAllBytes($outputTextBox.Text, $result.PlainBytes)
-                $outputTextBox.Text = $outputTextBox.Text
+                Set-PreviewFromBytes -Bytes $result.PlainBytes -PlaceholderOnError "Decryption worked, but preview is unavailable for this file."
                 Set-Status -Message "Image decrypted successfully."
+            }
+            4 {
+                if (-not (Test-Path -LiteralPath $input)) {
+                    throw "Input document file was not found."
+                }
+
+                if ([string]::IsNullOrWhiteSpace($outputTextBox.Text)) {
+                    throw "Choose where to save the encrypted file."
+                }
+
+                $inputBytes = [System.IO.File]::ReadAllBytes($input)
+                $fileName = [System.IO.Path]::GetFileName($input)
+                $extension = [System.IO.Path]::GetExtension($input)
+                $payload = Protect-Bytes -PlainBytes $inputBytes -Password $password -PayloadType "document" -OriginalName $fileName -OriginalExtension $extension
+                [System.IO.File]::WriteAllText($outputTextBox.Text, $payload, [System.Text.Encoding]::UTF8)
+                $previewImage.Source = $null
+                $previewImage.Visibility = "Collapsed"
+                $previewPlaceholder.Text = "Document encrypted successfully. No visual preview is generated for documents."
+                $previewPlaceholder.Visibility = "Visible"
+                Set-Status -Message "Document encrypted successfully."
+            }
+            5 {
+                if (-not (Test-Path -LiteralPath $input)) {
+                    throw "Encrypted file was not found."
+                }
+
+                if ([string]::IsNullOrWhiteSpace($outputTextBox.Text)) {
+                    throw "Choose where to save the decrypted document."
+                }
+
+                $serializedPayload = [System.IO.File]::ReadAllText($input)
+                $result = Unprotect-Bytes -SerializedPayload $serializedPayload -Password $password
+                [System.IO.File]::WriteAllBytes($outputTextBox.Text, $result.PlainBytes)
+                $previewImage.Source = $null
+                $previewImage.Visibility = "Collapsed"
+                $previewPlaceholder.Text = "Document decrypted successfully. Open the restored file from disk."
+                $previewPlaceholder.Visibility = "Visible"
+                $script:LastOpenedFilePath = $outputTextBox.Text
+                $openFileButton.Visibility = "Visible"
+                $showInFolderButton.Visibility = "Visible"
+                Set-SelectedFileInfo -Path $outputTextBox.Text
+                Set-Status -Message "Document decrypted successfully."
             }
         }
     }
@@ -737,12 +1220,44 @@ $copyButton.Add_Click({
     Set-Status -Message "Result copied to clipboard."
 })
 
+$openFileButton.Add_Click({
+    if ([string]::IsNullOrWhiteSpace($script:LastOpenedFilePath) -or -not (Test-Path -LiteralPath $script:LastOpenedFilePath)) {
+        Set-Status -Message "The decrypted file is no longer available on disk." -IsError $true
+        return
+    }
+
+    Start-Process -FilePath $script:LastOpenedFilePath
+    Set-Status -Message "Opened decrypted document."
+})
+
+$showInFolderButton.Add_Click({
+    if ([string]::IsNullOrWhiteSpace($script:LastOpenedFilePath) -or -not (Test-Path -LiteralPath $script:LastOpenedFilePath)) {
+        Set-Status -Message "The decrypted file is no longer available on disk." -IsError $true
+        return
+    }
+
+    Start-Process -FilePath "explorer.exe" -ArgumentList "/select,`"$script:LastOpenedFilePath`""
+    Set-Status -Message "Opened the document location."
+})
+
 $clearButton.Add_Click({
     $passwordBox.Clear()
     $inputTextBox.Clear()
     $outputTextBox.Clear()
+    $script:LastOpenedFilePath = $null
+    Set-SelectedFileInfo
+    $openFileButton.Visibility = "Collapsed"
+    $showInFolderButton.Visibility = "Collapsed"
     Set-Status -Message "Fields cleared."
 })
+
+$workArea = [System.Windows.SystemParameters]::WorkArea
+$targetHeight = [Math]::Min([double]$window.Height, [double]($workArea.Height - 20))
+$window.MaxHeight = [Math]::Max(680, $workArea.Height - 8)
+$window.Height = [Math]::Max(680, $targetHeight)
+$window.WindowStartupLocation = "Manual"
+$window.Left = $workArea.Left + [Math]::Max(0, ($workArea.Width - $window.Width) / 2)
+$window.Top = $workArea.Top + [Math]::Max(8, ($workArea.Height - $window.Height) / 2)
 
 Update-ModeUi
 [void]$window.ShowDialog()
