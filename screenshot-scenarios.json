@@ -1,0 +1,60 @@
+{
+  "assetsRoot": "demo-assets",
+  "outputRoot": "docs/screenshots",
+  "scenarios": [
+    {
+      "id": "text-encrypt",
+      "output": "text-encrypt.png",
+      "description": "Text encrypt",
+      "inputFile": "text-encrypt-input.txt"
+    },
+    {
+      "id": "text-decrypt",
+      "output": "text-decrypt.png",
+      "description": "Text decrypt",
+      "inputFile": "text-decrypt-input.json"
+    },
+    {
+      "id": "image-encrypt",
+      "output": "image-encrypt.png",
+      "description": "Image encrypt",
+      "inputFile": "image-input.jpg"
+    },
+    {
+      "id": "image-decrypt",
+      "output": "image-decrypt.png",
+      "description": "Image decrypt",
+      "inputFile": "image-encrypted.cdesk"
+    },
+    {
+      "id": "image-workflow",
+      "output": "image-workflow.png",
+      "description": "Image workflow",
+      "inputFile": "image-input.jpg"
+    },
+    {
+      "id": "document-encrypt",
+      "output": "document-encrypt.png",
+      "description": "Document encrypt",
+      "inputFile": "document-input.pdf"
+    },
+    {
+      "id": "document-decrypt",
+      "output": "document-decrypt.png",
+      "description": "Document decrypt",
+      "inputFile": "document-encrypted.cdesk"
+    },
+    {
+      "id": "document-workflow",
+      "output": "document-workflow.png",
+      "description": "Document workflow",
+      "inputFile": "document-encrypted.cdesk"
+    },
+    {
+      "id": "decrypt-error",
+      "output": "decrypt-error.png",
+      "description": "Decrypt error",
+      "inputFile": "decrypt-error.json"
+    }
+  ]
+}

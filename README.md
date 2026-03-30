@@ -6,7 +6,7 @@
 
 ## Кратко
 
-- Версия: `0.2.0`
+- Версия: `0.2.1`
 - Платформа: `Windows`
 - UI: `PowerShell + WPF`
 - Криптография: `AES-256-CBC` + `HMAC-SHA256` + `PBKDF2-SHA256`
@@ -20,17 +20,27 @@
 - восстанавливать исходное расширение файлов при расшифровке
 - показывать предпросмотр изображений
 - открывать расшифрованный документ и его папку
+- генерировать случайный пароль прямо в приложении
+- генерировать passphrase из нескольких слов
+- копировать пароль в буфер обмена
+- настраивать длину пароля и наборы символов
 - собирать portable-версию через отдельный скрипт
 
-## Почему проект может быть интересен
+## Генерация Паролей
 
-- локальная desktop-утилита без зависимости от облака
-- несколько разных пользовательских сценариев в одном приложении
-- отдельный launcher и portable build flow
-- документированный формат зашифрованного контейнера
-- выделенные служебные файлы: `SECURITY.md`, `CHANGELOG.md`, `LICENSE`, архитектурная документация
+В приложении есть встроенный генератор паролей под полем `Password`.
 
-## Быстрый старт
+Доступно:
+
+- `Generate` — случайный пароль
+- `Passphrase` — парольная фраза из слов
+- `Copy password` — копирование текущего пароля
+- выбор длины: `12`, `16`, `20`, `24`, `32`
+- переключатели групп символов: `A-Z`, `a-z`, `0-9`, `!@#`
+
+Это позволяет быстро создавать сильный пароль прямо перед шифрованием, не переключаясь в другие программы.
+
+## Быстрый Старт
 
 Запуск приложения:
 
@@ -38,7 +48,7 @@
 - `Launch-CipherDesk.cmd`
 - `CipherDesk.ps1`
 
-## Сборка Portable-версии
+## Сборка Portable-Версии
 
 Быстрый запуск:
 
@@ -66,7 +76,7 @@ powershell -ExecutionPolicy Bypass -File .\make-portable-release.ps1 -OutputRoot
 powershell -ExecutionPolicy Bypass -File .\CipherDesk.ps1 -SelfTest
 ```
 
-Отдельный тестовый скрипт:
+Отдельный тестовый сценарий:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tests\test-roundtrip.ps1
@@ -84,7 +94,18 @@ Self-test OK
 - [CHANGELOG.md](CHANGELOG.md) — история изменений
 - [docs/file-format.md](docs/file-format.md) — описание формата `.cdesk`
 - [docs/architecture.md](docs/architecture.md) — устройство приложения
-- [RELEASE_NOTES_0.2.0.md](RELEASE_NOTES_0.2.0.md) — заметки к версии `0.2.0`
+- [RELEASE_NOTES_0.2.1.md](RELEASE_NOTES_0.2.1.md) — заметки к версии `0.2.1`
+- [demo-assets/README.md](demo-assets/README.md) — demo-файлы для автоматического обновления скриншотов
+
+## Обновление Скриншотов
+
+Скрипт может автоматически пересоздать все скриншоты README на основе файлов из `demo-assets`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\make-screenshots.ps1
+```
+
+Сценарии лежат в [screenshot-scenarios.json](screenshot-scenarios.json), а входные demo-файлы и автоматически подготовленные артефакты находятся в [demo-assets](demo-assets/README.md).
 
 ## Скриншоты
 
@@ -132,6 +153,8 @@ Self-test OK
 - `Launch-CipherDesk.cmd` — простой локальный запуск
 - `make-portable-release.ps1` — полный скрипт сборки portable-версии
 - `make-portable-release.cmd` — быстрый запуск сборки
+- `make-screenshots.ps1` — автоматическое обновление скриншотов
+- `screenshot-scenarios.json` — список сценариев для автосъёмки
 - `tests/test-roundtrip.ps1` — тестовый сценарий
 - `docs/file-format.md` — описание формата контейнера
 - `docs/architecture.md` — краткая архитектура проекта

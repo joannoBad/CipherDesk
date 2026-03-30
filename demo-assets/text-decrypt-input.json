@@ -1,0 +1,14 @@
+﻿{
+    "originalName":  "",
+    "originalExtension":  "",
+    "kdf":  "PBKDF2-SHA256",
+    "integrity":  "HMAC-SHA256",
+    "version":  1,
+    "data":  "idZB0w12Y7/Svsm8iIJHwnH9Ad59P6Wg3SynCYTpIAeuzFaIIMG9koYe4gJzPwh6QY158imYOYrHqSR+0qMf0jKJ4JRqL8EOWjwJzPI6SV3rIMLgQxpLvaUXehe4x1NNRehXhfuWa11gJoDT4m5W6A==",
+    "algorithm":  "AES-256-CBC",
+    "mac":  "EdUG1nZ4Fdacxon+w+wg2Dw9RoZapaE9+i0ClAqQmKg=",
+    "salt":  "4l2k2+6y6baWz5mHy3nmMg==",
+    "payloadType":  "text",
+    "iv":  "GiQmaNLKvMrdxgRAyU/OkA==",
+    "iterations":  250000
+}

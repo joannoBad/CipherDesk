@@ -9,6 +9,7 @@ Add-Type -AssemblyName System.Windows.Forms
 
 $rootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $cscPath = Join-Path $env:WINDIR "Microsoft.NET\Framework\v4.0.30319\csc.exe"
+$versionFile = Join-Path $rootDir "VERSION"
 
 function Write-Step {
     param(
@@ -57,7 +58,14 @@ function Get-OutputRoot {
 
 try {
     $resolvedOutputRoot = Get-OutputRoot -CurrentValue $OutputRoot
-    $portableDir = Join-Path $resolvedOutputRoot "CipherDesk-Portable"
+    $version = if (Test-Path -LiteralPath $versionFile) {
+        (Get-Content -LiteralPath $versionFile -Raw).Trim()
+    }
+    else {
+        "0.0.0"
+    }
+    $releaseBaseName = "CipherDesk-Portable-{0}-{1}" -f (Get-Date -Format "dd-MM-yyyy"), $version
+    $portableDir = Join-Path $resolvedOutputRoot $releaseBaseName
     $launcherPath = Join-Path $rootDir "CipherDeskLauncher.exe"
     $launcherSourcePath = Join-Path $rootDir "CipherDeskLauncher.cs"
 
@@ -83,8 +91,11 @@ try {
             Remove-Item -LiteralPath $portableDir -Recurse -Force
         }
         catch {
-            $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-            $portableDir = Join-Path $resolvedOutputRoot ("CipherDesk-Portable-" + $stamp)
+            $suffix = 2
+            do {
+                $portableDir = Join-Path $resolvedOutputRoot ("{0}-{1}" -f $releaseBaseName, $suffix)
+                $suffix++
+            } while (Test-Path -LiteralPath $portableDir)
         }
     }
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+- Fixed demo screenshot text encoding so Russian sample text renders correctly.
+- Added built-in password generation with random password, passphrase, copy, length, and character-set options.
+- Added automated screenshot capture flow driven by demo assets and scenario definitions.
+- Refreshed README and screenshot set for the 0.2.1 release.
+
 ## 0.2.0
 
 - Added dark desktop UI with dedicated modes for text, image, and document workflows.
