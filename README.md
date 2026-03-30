@@ -6,7 +6,7 @@
 
 ## Кратко
 
-- Версия: `0.2.2`
+- Версия: `0.2.3`
 - Платформа: `Windows`
 - UI: `PowerShell + WPF`
 - Криптография: `AES-256-CBC` + `HMAC-SHA256` + `PBKDF2-SHA256`
@@ -94,7 +94,7 @@ Self-test OK
 - [CHANGELOG.md](CHANGELOG.md) — история изменений
 - [docs/file-format.md](docs/file-format.md) — описание формата `.cdesk`
 - [docs/architecture.md](docs/architecture.md) — устройство приложения
-- [RELEASE_NOTES_0.2.2.md](RELEASE_NOTES_0.2.2.md) — заметки к версии `0.2.2`
+- [RELEASE_NOTES_0.2.3.md](RELEASE_NOTES_0.2.3.md) — заметки к версии `0.2.3`
 - [demo-assets/README.md](demo-assets/README.md) — demo-файлы для автоматического обновления скриншотов
 
 ## Обновление Скриншотов
@@ -148,7 +148,7 @@ powershell -ExecutionPolicy Bypass -File .\make-screenshots.ps1
 ## Структура Репозитория
 
 - `CipherDesk.ps1` — основное desktop-приложение
-- `CipherDesk.App.ps1` — внутренняя реализация окна и служебных dev-сценариев
+- `CipherDesk.App.ps1` — внутренняя реализация окна и orchestration-слой приложения
 - `CipherDeskLauncher.cs` — исходник launcher'а
 - `CipherDeskLauncher.exe` — launcher для запуска как обычной программы
 - `Launch-CipherDesk.cmd` — простой локальный запуск
@@ -156,6 +156,7 @@ powershell -ExecutionPolicy Bypass -File .\make-screenshots.ps1
 - `make-portable-release.cmd` — быстрый запуск сборки
 - `make-screenshots.ps1` — автоматическое обновление скриншотов
 - `screenshot-scenarios.json` — список сценариев для автосъёмки
+- `modules/` — функциональные модули приложения
 - `tests/test-roundtrip.ps1` — тестовый сценарий
 - `docs/file-format.md` — описание формата контейнера
 - `docs/architecture.md` — краткая архитектура проекта
@@ -165,7 +166,20 @@ powershell -ExecutionPolicy Bypass -File .\make-screenshots.ps1
 Служебная логика для автоматических скриншотов вынесена из публичного entrypoint в отдельный внутренний слой:
 
 - [CipherDesk.ps1](CipherDesk.ps1) — обычный пользовательский запуск и self-test
-- [CipherDesk.App.ps1](CipherDesk.App.ps1) — внутренняя реализация UI и dev-automation hooks
+- [CipherDesk.App.ps1](CipherDesk.App.ps1) — внутренняя реализация UI и orchestration
 - [make-screenshots.ps1](make-screenshots.ps1) — orchestration для пересъёмки README-скриншотов
 
 Так основная точка входа остаётся понятной для пользователя, а технические сценарии живут отдельно от повседневного запуска приложения.
+
+## Модульная Структура
+
+Проект дополнительно разбит на отдельные модули по ответственности:
+
+- [CipherDesk.Core.ps1](modules/CipherDesk.Core.ps1) — криптография, payload, text helpers и self-test
+- [CipherDesk.Passwords.ps1](modules/CipherDesk.Passwords.ps1) — генерация случайных паролей и passphrase
+- [CipherDesk.Files.ps1](modules/CipherDesk.Files.ps1) — file dialogs и вычисление путей для `.cdesk` и restored-файлов
+- [CipherDesk.Screenshots.ps1](modules/CipherDesk.Screenshots.ps1) — служебная логика автоскриншотов
+- [CipherDesk.UiHelpers.ps1](modules/CipherDesk.UiHelpers.ps1) — status, preview, file info и UI helper-функции
+- [CipherDesk.ModeHandlers.ps1](modules/CipherDesk.ModeHandlers.ps1) — mode switching, run action и runtime-логика режимов
+
+Это уменьшает размер основного app-файла и делает код проще для чтения, поддержки и дальнейшего рефакторинга.

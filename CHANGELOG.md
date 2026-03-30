@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.3
+
+- Split the large app file into dedicated modules for core crypto, passwords, files, screenshots, UI helpers, and mode handlers.
+- Reduced the size of `CipherDesk.App.ps1` so it focuses on XAML, control wiring, and startup flow.
+- Updated README and architecture documentation to describe the new module layout.
+- Kept portable packaging aligned with the modular runtime structure.
+
 ## 0.2.2
 
 - Moved screenshot automation out of the public entrypoint into a separate internal app layer.
