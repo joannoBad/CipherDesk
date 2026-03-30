@@ -4,6 +4,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+$script:AppVersion = "0.2.0"
 
 function ConvertTo-Base64 {
     param(
@@ -410,6 +411,29 @@ if ($SelfTest) {
         throw "Document self-test failed."
     }
 
+    try {
+        [void](Unprotect-Text -SerializedPayload $payload -Password "WrongPassword!")
+        throw "Wrong password validation failed."
+    }
+    catch {
+        if ($_.Exception.Message -eq "Wrong password validation failed.") {
+            throw
+        }
+    }
+
+    $tamperedPayload = $payload | ConvertFrom-Json
+    $tamperedPayload.data = "AAAA"
+
+    try {
+        [void](Unprotect-Text -SerializedPayload ($tamperedPayload | ConvertTo-Json) -Password $password)
+        throw "Tampered payload validation failed."
+    }
+    catch {
+        if ($_.Exception.Message -eq "Tampered payload validation failed.") {
+            throw
+        }
+    }
+
     Write-Output "Self-test OK"
     exit 0
 }
@@ -759,6 +783,7 @@ Add-Type -AssemblyName PresentationCore, PresentationFramework, WindowsBase
 
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 $window = [Windows.Markup.XamlReader]::Load($reader)
+$window.Title = "Cipher Desk " + $script:AppVersion
 
 $textModeButton = $window.FindName("TextModeButton")
 $imageModeButton = $window.FindName("ImageModeButton")

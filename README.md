@@ -1,27 +1,38 @@
 # Cipher Desk
 
-`Cipher Desk` — это desktop-приложение для Windows, которое шифрует данные локально, без интернета и без внешних сервисов.
+`Cipher Desk` — desktop-приложение для Windows для локального шифрования текста, изображений и документов.
 
-Поддерживаются три типа данных:
+Проект работает полностью офлайн и не требует внешних сервисов.
 
-- текст
-- изображения
-- документы
+## Кратко
 
-## Возможности
+- Версия: `0.2.0`
+- Платформа: `Windows`
+- UI: `PowerShell + WPF`
+- Криптография: `AES-256-CBC` + `HMAC-SHA256` + `PBKDF2-SHA256`
+- Формат файлов: `.cdesk`
 
-- локальное шифрование через `AES-256-CBC`
-- проверка целостности через `HMAC-SHA256`
-- вывод ключа из пароля через `PBKDF2-SHA256`
-- шифрование текста в `JSON`
-- шифрование изображений в `.cdesk`
-- шифрование документов в `.cdesk`
-- предпросмотр изображений прямо в окне приложения
-- действия для документов: `Open file` и `Show in folder`
+## Что умеет
 
-## Запуск
+- шифровать текст в `JSON`
+- шифровать изображения в `.cdesk`
+- шифровать документы в `.cdesk`
+- восстанавливать исходное расширение файлов при расшифровке
+- показывать предпросмотр изображений
+- открывать расшифрованный документ и его папку
+- собирать portable-версию через отдельный скрипт
 
-Приложение можно открыть одним из файлов:
+## Почему проект может быть интересен
+
+- локальная desktop-утилита без зависимости от облака
+- несколько разных пользовательских сценариев в одном приложении
+- отдельный launcher и portable build flow
+- документированный формат зашифрованного контейнера
+- выделенные служебные файлы: `SECURITY.md`, `CHANGELOG.md`, `LICENSE`, архитектурная документация
+
+## Быстрый старт
+
+Запуск приложения:
 
 - `CipherDeskLauncher.exe`
 - `Launch-CipherDesk.cmd`
@@ -29,30 +40,36 @@
 
 ## Сборка Portable-версии
 
-Быстрый запуск сборки:
+Быстрый запуск:
 
 ```cmd
 make-portable-release.cmd
 ```
 
-Сборка через PowerShell:
+Через PowerShell:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\make-portable-release.ps1
 ```
 
-С указанием папки для готовой portable-сборки:
+С указанием папки вывода:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\make-portable-release.ps1 -OutputRoot .\release
 ```
 
-## Самопроверка
+## Тестирование
 
-Проверка криптографической логики:
+Базовая самопроверка:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\CipherDesk.ps1 -SelfTest
+```
+
+Отдельный тестовый скрипт:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tests\test-roundtrip.ps1
 ```
 
 Ожидаемый результат:
@@ -60,6 +77,14 @@ powershell -ExecutionPolicy Bypass -File .\CipherDesk.ps1 -SelfTest
 ```text
 Self-test OK
 ```
+
+## Документация
+
+- [SECURITY.md](SECURITY.md) — ограничения, модель угроз и рекомендации
+- [CHANGELOG.md](CHANGELOG.md) — история изменений
+- [docs/file-format.md](docs/file-format.md) — описание формата `.cdesk`
+- [docs/architecture.md](docs/architecture.md) — устройство приложения
+- [RELEASE_NOTES_0.2.0.md](RELEASE_NOTES_0.2.0.md) — заметки к версии `0.2.0`
 
 ## Скриншоты
 
@@ -107,3 +132,6 @@ Self-test OK
 - `Launch-CipherDesk.cmd` — простой локальный запуск
 - `make-portable-release.ps1` — полный скрипт сборки portable-версии
 - `make-portable-release.cmd` — быстрый запуск сборки
+- `tests/test-roundtrip.ps1` — тестовый сценарий
+- `docs/file-format.md` — описание формата контейнера
+- `docs/architecture.md` — краткая архитектура проекта
