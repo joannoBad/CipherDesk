@@ -6,9 +6,9 @@
     "version":  1,
     "data":  "AAAA",
     "algorithm":  "AES-256-CBC",
-    "mac":  "EdUG1nZ4Fdacxon+w+wg2Dw9RoZapaE9+i0ClAqQmKg=",
-    "salt":  "4l2k2+6y6baWz5mHy3nmMg==",
+    "mac":  "bhK1bDcYtUYvZCR0YoznW6exXpYAhPZZ5w40Gh3ALIU=",
+    "salt":  "lhlhYAquiReVk1K+gJaLRw==",
     "payloadType":  "text",
-    "iv":  "GiQmaNLKvMrdxgRAyU/OkA==",
+    "iv":  "JsXPFRm9y2dfZ9cvW92HJA==",
     "iterations":  250000
 }
