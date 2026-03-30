@@ -68,6 +68,30 @@ powershell -ExecutionPolicy Bypass -File .\make-portable-release.ps1
 powershell -ExecutionPolicy Bypass -File .\make-portable-release.ps1 -OutputRoot .\release
 ```
 
+## Проверка Официального Релиза
+
+Для публичных release-артефактов можно сгенерировать архив и файл контрольных сумм:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\make-checksums.ps1
+```
+
+Скрипт создаёт:
+
+- `.zip` архив для актуальной portable-сборки
+- `SHA256SUMS.txt` с `SHA-256` для архива и `CipherDeskLauncher.exe`
+
+Проверка файла на Windows:
+
+```powershell
+Get-FileHash .\CipherDesk-Portable-30-03-2026-0.2.3.zip -Algorithm SHA256
+```
+
+Рекомендуемый практический подход:
+
+- скачивать только релизы из GitHub Releases этого репозитория
+- сверять хэш скачанного архива с `SHA256SUMS.txt`
+
 ## Тестирование
 
 Базовая самопроверка:
