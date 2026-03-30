@@ -4,6 +4,8 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+# Keeping the version here is a bit blunt, but it is easy to surface in the UI
+# and release notes without adding another config layer yet.
 $script:AppVersion = "0.2.0"
 
 function ConvertTo-Base64 {
@@ -90,6 +92,8 @@ function Get-KeyMaterial {
         [int]$Iterations = 250000
     )
 
+    # Two 32-byte chunks: one for AES, one for HMAC.
+    # I kept it explicit instead of trying to get clever with a custom structure.
     $kdf = New-Object System.Security.Cryptography.Rfc2898DeriveBytes(
         $Password,
         $Salt,
@@ -127,6 +131,8 @@ function Protect-Bytes {
     $iv = Get-RandomBytes -Length 16
     $keys = Get-KeyMaterial -Password $Password -Salt $salt
 
+    # CBC is not the fanciest option, but with a separate MAC it keeps the payload
+    # format straightforward and easy to inspect while I iterate on the app.
     $aes = New-Object System.Security.Cryptography.AesManaged
     $aes.Mode = [System.Security.Cryptography.CipherMode]::CBC
     $aes.Padding = [System.Security.Cryptography.PaddingMode]::PKCS7
@@ -148,6 +154,7 @@ function Protect-Bytes {
         $aes.Dispose()
     }
 
+    # MAC covers IV + ciphertext, so we fail fast on tampering before decrypting.
     $macInput = Get-CombinedBytes -First $iv -Second $cipherBytes
     $hmac = New-Object System.Security.Cryptography.HMACSHA256(, $keys.MacKey)
 
@@ -222,6 +229,7 @@ function Unprotect-Bytes {
         $hmac.Dispose()
     }
 
+    # Integrity check happens before decrypt on purpose.
     if (-not (Test-ByteArrayEquality -Left $mac -Right $expectedMac)) {
         throw "Integrity check failed. Verify the password and payload."
     }
@@ -309,6 +317,8 @@ function Get-DecryptedFilePath {
         $extension = ".$extension"
     }
 
+    # Using "-restored" keeps me from overwriting the source by accident.
+    # TODO: let the user choose a naming pattern in settings if this grows.
     return [System.IO.Path]::Combine($directory, "$baseName-restored$extension")
 }
 
@@ -328,6 +338,8 @@ function Get-InputFilePath {
     }
     else {
         if ($ContentMode -eq "document") {
+            # This list is intentionally broad enough for common office/document cases.
+            # FIXME: check whether we want epub / md / xml here too.
             $dialog.Filter = "Documents|*.pdf;*.doc;*.docx;*.xls;*.xlsx;*.ppt;*.pptx;*.txt;*.rtf;*.odt;*.ods;*.csv|All files (*.*)|*.*"
         }
         else {
@@ -411,6 +423,7 @@ if ($SelfTest) {
         throw "Document self-test failed."
     }
 
+    # Wrong password should fail cleanly, not produce garbage output.
     try {
         [void](Unprotect-Text -SerializedPayload $payload -Password "WrongPassword!")
         throw "Wrong password validation failed."
@@ -421,6 +434,7 @@ if ($SelfTest) {
         }
     }
 
+    # Very small tamper test, but enough to make sure MAC verification is alive.
     $tamperedPayload = $payload | ConvertFrom-Json
     $tamperedPayload.data = "AAAA"
 
@@ -522,7 +536,7 @@ Add-Type -AssemblyName PresentationCore, PresentationFramework, WindowsBase
                            FontSize="36"
                            FontWeight="Bold"
                            Foreground="#F2F5FF" />
-                <TextBlock Text="Dark offline vault for encrypting text and image files. No internet. No external services. Only local secrets."
+        <TextBlock Text="Dark offline vault for encrypting text and image files. No internet. No external services. Only local secrets."
                            Margin="0,10,0,0"
                            TextWrapping="Wrap"
                            FontSize="15"
@@ -942,6 +956,7 @@ function Set-PreviewFromBytes {
     try {
         $memoryStream = New-Object System.IO.MemoryStream(, $Bytes)
         try {
+            # Loading the bitmap from memory keeps the preview independent from the source file lock.
             $bitmap = New-Object System.Windows.Media.Imaging.BitmapImage
             $bitmap.BeginInit()
             $bitmap.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
@@ -1025,6 +1040,7 @@ function Update-ModeUi {
     Set-ToggleStyle -Button $encryptActionButton -IsActive ($script:SelectedOperation -eq "encrypt") -ActiveBackground "#2C2160" -ActiveBorder "#8D73FF"
     Set-ToggleStyle -Button $decryptActionButton -IsActive ($script:SelectedOperation -eq "decrypt") -ActiveBackground "#142B52" -ActiveBorder "#79B6FF"
 
+    # Resetting the visible state here is a little repetitive, but it keeps mode changes predictable.
     $inputButtonsPanel.Visibility = if ($isFileMode) { "Visible" } else { "Collapsed" }
     $saveOutputButton.Visibility = if ($isFileMode) { "Visible" } else { "Collapsed" }
     $openFileButton.Visibility = "Collapsed"
@@ -1163,6 +1179,8 @@ $runButton.Add_Click({
                     throw "Choose where to save the encrypted file."
                 }
 
+                # ReadAllBytes is fine here for the current app scope.
+                # TODO: switch to streaming if I ever want to handle really large media files.
                 $inputBytes = [System.IO.File]::ReadAllBytes($input)
                 $fileName = [System.IO.Path]::GetFileName($input)
                 $extension = [System.IO.Path]::GetExtension($input)
@@ -1195,6 +1213,7 @@ $runButton.Add_Click({
                     throw "Choose where to save the encrypted file."
                 }
 
+                # Same note as image mode: loading whole files is the simplest thing for now.
                 $inputBytes = [System.IO.File]::ReadAllBytes($input)
                 $fileName = [System.IO.Path]::GetFileName($input)
                 $extension = [System.IO.Path]::GetExtension($input)
@@ -1280,6 +1299,8 @@ $workArea = [System.Windows.SystemParameters]::WorkArea
 $targetHeight = [Math]::Min([double]$window.Height, [double]($workArea.Height - 20))
 $window.MaxHeight = [Math]::Max(680, $workArea.Height - 8)
 $window.Height = [Math]::Max(680, $targetHeight)
+# Manual centering ended up being more reliable than trusting WPF here,
+# especially on smaller displays.
 $window.WindowStartupLocation = "Manual"
 $window.Left = $workArea.Left + [Math]::Max(0, ($workArea.Width - $window.Width) / 2)
 $window.Top = $workArea.Top + [Math]::Max(8, ($workArea.Height - $window.Height) / 2)
