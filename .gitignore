@@ -5,6 +5,7 @@ obj/
 # Build outputs
 dist/
 release/
+demo-assets/_generated/
 
 # OS / editor
 Thumbs.db

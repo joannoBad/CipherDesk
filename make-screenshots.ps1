@@ -330,6 +330,79 @@ public static class NativeMethods {
     }
 }
 
+function Get-RedactionRects {
+    param(
+        [Parameter(Mandatory = $true)][string]$ScenarioId
+    )
+
+    $leftPathRect = [pscustomobject]@{
+        X = 58
+        Y = 584
+        Width = 174
+        Height = 22
+    }
+
+    $imageRightPathRect = [pscustomobject]@{
+        X = 518
+        Y = 486
+        Width = 174
+        Height = 22
+    }
+
+    $documentRightPathRect = [pscustomobject]@{
+        X = 518
+        Y = 518
+        Width = 174
+        Height = 22
+    }
+
+    switch ($ScenarioId) {
+        "image-encrypt" { return @($leftPathRect, $imageRightPathRect) }
+        "image-decrypt" { return @($leftPathRect, $imageRightPathRect) }
+        "image-workflow" { return @($leftPathRect, $imageRightPathRect) }
+        "document-encrypt" { return @($leftPathRect, $documentRightPathRect) }
+        "document-decrypt" { return @($leftPathRect, $documentRightPathRect) }
+        "document-workflow" { return @($leftPathRect, $documentRightPathRect) }
+        default { return @() }
+    }
+}
+
+function Protect-ScreenshotPaths {
+    param(
+        [Parameter(Mandatory = $true)][string]$ScenarioId,
+        [Parameter(Mandatory = $true)][string]$ImagePath
+    )
+
+    $rects = @(Get-RedactionRects -ScenarioId $ScenarioId)
+    if ($rects.Count -eq 0) {
+        return
+    }
+
+    $bitmap = New-Object System.Drawing.Bitmap $ImagePath
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $brush = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 0, 0, 0))
+    $temporaryPath = "{0}.tmp.png" -f $ImagePath
+
+    try {
+        foreach ($rect in $rects) {
+            $graphics.FillRectangle($brush, $rect.X, $rect.Y, $rect.Width, $rect.Height)
+        }
+    }
+    finally {
+        $brush.Dispose()
+        $graphics.Dispose()
+    }
+
+    try {
+        $bitmap.Save($temporaryPath, [System.Drawing.Imaging.ImageFormat]::Png)
+    }
+    finally {
+        $bitmap.Dispose()
+    }
+
+    Move-Item -LiteralPath $temporaryPath -Destination $ImagePath -Force
+}
+
 try {
     $config = Import-ScenarioConfig -Path $resolvedConfigPath
     $assetsRoot = Join-Path $rootDir $config.assetsRoot
@@ -363,6 +436,8 @@ try {
         if (-not (Test-Path -LiteralPath $targetPath)) {
             throw "Screenshot was not created: $targetPath"
         }
+
+        Protect-ScreenshotPaths -ScenarioId $scenario.id -ImagePath $targetPath
 
         Write-Success ("Saved screenshot: {0}" -f $targetPath)
     }
